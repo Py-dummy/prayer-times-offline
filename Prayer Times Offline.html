@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Prayer Times · PWA</title>
+  
+  <!-- PWA essentials (deep dark blue masjid icon) -->
+  <meta name="theme-color" content="#0b1a2f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230b1a2f'/%3E%3Cpath fill='%23f5e6d3' d='M256 120c-20 0-38 8-52 22l-70 70c-14 14-22 32-22 52v120h288V264c0-20-8-38-22-52l-70-70c-14-14-32-22-52-22z'/%3E%3Crect x='144' y='312' width='224' height='56' fill='%23c9b69a'/%3E%3Ccircle cx='256' cy='200' r='32' fill='%23e0cbb0'/%3E%3Cpath fill='%23f5e6d3' d='M140 368h40v56h-40zM332 368h40v56h-40z'/%3E%3Ccircle cx='160' cy='384' r='12' fill='%230b1a2f'/%3E%3Ccircle cx='352' cy='384' r='12' fill='%230b1a2f'/%3E%3Cpath fill='%23d4c0a1' d='M200 312h112v20H200z'/%3E%3C/svg%3E">
+  
+  <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Prayer%20Times%22%2C%22short_name%22%3A%22Prayer%22%2C%22description%22%3A%22Accurate%20prayer%20times%20with%20offsets%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230b1a2f%22%2C%22theme_color%22%3A%22%230b1a2f%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Butf8%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%2520512%2520512%2522%253E%253Crect%2520width%253D%2522512%2522%2520height%253D%2522512%2522%2520rx%253D%2522112%2522%2520fill%253D%2522%25230b1a2f%2522%252F%253E%253Cpath%2520fill%253D%2522%2523f5e6d3%2522%2520d%253D%2522M256%2520120c-20%25200-38%25208-52%252022l-70%252070c-14%252014-22%252032-22%252052v120h288V264c0-20-8-38-22-52l-70-70c-14-14-32-22-52-22z%2522%252F%253E%253Crect%2520x%253D%2522144%2522%2520y%253D%2522312%2522%2520width%253D%2522224%2522%2520height%253D%252256%2522%2520fill%253D%2522%2523c9b69a%2522%252F%253E%253Ccircle%2520cx%253D%2522256%2522%2520cy%253D%2522200%2522%2520r%253D%252232%2522%2520fill%253D%2522%2523e0cbb0%2522%252F%253E%253Cpath%2520fill%253D%2522%2523f5e6d3%2522%2520d%253D%2522M140%2520368h40v56h-40zM332%2520368h40v56h-40z%2522%252F%253E%253Ccircle%2520cx%253D%2522160%2522%2520cy%253D%2522384%2522%2520r%253D%252212%2522%2520fill%253D%2522%25230b1a2f%2522%252F%253E%253Ccircle%2520cx%253D%2522352%2522%2520cy%253D%2522384%2522%2520r%253D%252212%2522%2520fill%253D%2522%25230b1a2f%2522%252F%253E%253Cpath%2520fill%253D%2522%2523d4c0a1%2522%2520d%253D%2522M200%2520312h112v20H200z%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%2C%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Butf8%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%2520192%2520192%2522%253E%253Crect%2520width%253D%2522192%2522%2520height%253D%2522192%2522%2520rx%253D%252240%2522%2520fill%253D%2522%25230b1a2f%2522%252F%253E%253Cpath%2520fill%253D%2522%2523f5e6d3%2522%2520d%253D%2522M96%252045c-7.5%25200-14.2%25203-19.5%25208.2L50.3%252079.5c-5.2%25205.2-8.2%252012-8.2%252019.5v45h108V99c0-7.5-3-14.2-8.2-19.5l-26.2-26.3c-5.3-5.2-12-8.2-19.5-8.2z%2522%252F%253E%253Crect%2520x%253D%252254%2522%2520y%253D%2522117%2522%2520width%253D%252284%2522%2520height%253D%252221%2522%2520fill%253D%2522%2523c9b69a%2522%252F%253E%253Ccircle%2520cx%253D%252296%2522%2520cy%253D%252275%2522%2520r%253D%252212%2522%2520fill%253D%2522%2523e0cbb0%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+
+  <style>
+    :root {
+      --bg-dark: #0a0a0a; --surface-dark: #1c1c1c; --text-dark: #e0e0e0; --silver-dark: #a0a0a0;
+      --bg-light: #e8e8e8; --surface-light: #ffffff; --text-light: #1a1a1a; --silver-light: #606060;
+      --accent-orange: #f57c00; --accent-emerald: #10b981;
+      --bg: var(--bg-dark); --surface: var(--surface-dark); --text: var(--text-dark); 
+      --silver: var(--silver-dark); --accent: var(--accent-orange);
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0; 
+      padding: 18px 14px 28px; 
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); 
+      color: var(--text); 
+      transition: background 0.2s, color 0.2s;
+      max-width: 560px; 
+      margin-left: auto; 
+      margin-right: auto;
+    }
+    
+    /* controls row: balanced sizing */
+    .controls { 
+      display: flex; 
+      gap: 8px; 
+      margin-bottom: 18px; 
+      flex-wrap: wrap; 
+    }
+    
+    button, input[type="date"] {
+      flex: 1 1 0;
+      min-width: 100px;
+      padding: 12px 6px; 
+      border-radius: 18px; 
+      font-weight: 600; 
+      font-size: 0.95rem;
+      background: var(--surface); 
+      color: var(--text); 
+      border: 1.8px solid var(--silver);
+      outline: none; 
+      transition: border 0.15s, background 0.15s; 
+      cursor: pointer;
+      text-align: center;
+    }
+    
+    button:hover, input[type="date"]:focus { 
+      border-color: var(--accent); 
+    }
+    
+    /* cards: refined spacing, intuitive hierarchy */
+    .card {
+      background: var(--surface); 
+      border-radius: 22px; 
+      padding: 20px 18px; 
+      margin-bottom: 18px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.05); 
+      border: 1px solid rgba(128,128,128,0.08);
+    }
+    
+    h2 { 
+      margin: 0 0 12px 0; 
+      font-size: 0.95rem; 
+      color: var(--silver); 
+      text-transform: uppercase; 
+      letter-spacing: 1px; 
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .countdown { 
+      font-size: 2.4rem; 
+      font-weight: 700; 
+      margin: 6px 0 4px 0; 
+      color: var(--accent); 
+      line-height: 1.2; 
+    }
+    .subtitle { 
+      font-size: 0.9rem; 
+      color: var(--silver); 
+      font-weight: 400;
+    }
+    
+    .flex-between { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 12px 0; 
+      border-bottom: 1px solid rgba(128,128,128,0.12); 
+    }
+    .flex-between:last-child { border-bottom: none; padding-bottom: 0; }
+    
+    .event-name { font-weight: 600; font-size: 1.1rem; }
+    .event-time { font-family: 'SF Mono', 'Menlo', monospace; font-size: 1.1rem; color: var(--accent); }
+    
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+    
+    /* OFFSET panel – proportionate, intuitive */
+    .offset-grid {
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); 
+      gap: 12px 10px;
+      margin-top: 6px;
+    }
+    .offset-item {
+      display: flex; 
+      flex-direction: column; 
+      gap: 5px;
+    }
+    .offset-item label {
+      font-size: 0.75rem; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      color: var(--silver);
+      font-weight: 600;
+    }
+    .offset-item input {
+      background: var(--bg); 
+      border: 1.8px solid var(--silver); 
+      color: var(--text);
+      padding: 10px 6px; 
+      border-radius: 16px; 
+      font-size: 1rem; 
+      font-weight: 500;
+      text-align: center; 
+      outline: none; 
+      transition: border 0.15s;
+    }
+    .offset-item input:focus { border-color: var(--accent); }
+    
+    .locate-btn {
+      background: transparent; 
+      border: 1.8px solid var(--accent); 
+      color: var(--accent);
+      padding: 8px 16px; 
+      border-radius: 40px; 
+      font-weight: 600; 
+      font-size: 0.9rem;
+      cursor: pointer; 
+      transition: 0.2s;
+      margin-left: 8px;
+    }
+    .locate-btn:hover { background: var(--accent); color: #0a0a0a; }
+    
+    .status-row { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      flex-wrap: wrap; 
+    }
+    
+    /* small note */
+    .saved-hint {
+      font-size: 0.7rem; 
+      margin-top: 8px; 
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Controls: theme, accent, date picker -->
+<div class="controls">
+  <button id="themeToggle">🌓 Theme</button>
+  <button id="accentToggle">🎨 Accent</button>
+  <input type="date" id="datePicker">
+</div>
+
+<!-- TIME OFFSETS (saved to localStorage) -->
+<div class="card" style="padding: 18px 16px;">
+  <h2>⏱️ TIME OFFSETS (minutes)</h2>
+  <div class="offset-grid" id="offsetPanel">
+    <div class="offset-item"><label>Fajr</label><input type="number" id="offsetFajr" value="33" step="1"></div>
+    <div class="offset-item"><label>Dhuhr</label><input type="number" id="offsetDhuhr" value="7" step="1"></div>
+    <div class="offset-item"><label>Asr</label><input type="number" id="offsetAsr" value="13" step="1"></div>
+    <div class="offset-item"><label>Maghrib</label><input type="number" id="offsetMaghrib" value="-13" step="1"></div>
+    <div class="offset-item"><label>Isha</label><input type="number" id="offsetIsha" value="9" step="1"></div>
+  </div>
+  <div class="saved-hint" id="saveIndicator">💾 offsets saved automatically</div>
+</div>
+
+<!-- Status / Location card -->
+<div class="card">
+  <div class="status-row">
+    <h2 style="margin:0;">📍 Status</h2>
+    <button class="locate-btn" id="retryLocationBtn">⟳ Refresh</button>
+  </div>
+  <div id="status" class="subtitle" style="margin-top:8px;">Waiting for GPS...</div>
+</div>
+
+<!-- Next salah -->
+<div class="card">
+  <h2>Next salah</h2>
+  <div class="countdown pulse" id="nextSalah">--:--</div>
+  <div id="nextSalahName" class="subtitle">calculating</div>
+</div>
+
+<!-- Next haram time -->
+<div class="card">
+  <h2>Next haram time</h2>
+  <div class="countdown" id="nextHaram">--:--</div>
+  <div id="nextHaramName" class="subtitle">calculating</div>
+</div>
+
+<!-- Ramadan times -->
+<div class="card">
+  <h2>Ramadan times</h2>
+  <div class="flex-between">
+    <span class="event-name">Sehri ends</span>
+    <span class="event-time" id="sehriTime">--:--</span>
+  </div>
+  <div class="flex-between">
+    <span class="event-name">Iftar starts</span>
+    <span class="event-time" id="iftarTime">--:--</span>
+  </div>
+</div>
+
+<!-- Daily schedule -->
+<div class="card">
+  <h2>Daily schedule</h2>
+  <div id="timesList"></div>
+</div>
+
+<script>
+  (function() {
+    "use strict";
+
+    // ---------- STATE ----------
+    let isDark = true;
+    let isOrange = true;
+    let currentLat = null;
+    let currentLng = null;
+    let selectedDate = new Date();
+    let calculatedTimes = {};
+    let timeOffset = 0;               // network - local (minutes)
+    
+    // Dynamic prayer offsets – synced with inputs & localStorage
+    const prayerOffsets = {
+      fajr: 33,
+      dhuhr: 7,
+      asr: 13,
+      maghrib: -13,
+      isha: 9
+    };
+
+    // DOM elements
+    const statusDiv = document.getElementById('status');
+    const nextSalahEl = document.getElementById('nextSalah');
+    const nextSalahNameEl = document.getElementById('nextSalahName');
+    const nextHaramEl = document.getElementById('nextHaram');
+    const nextHaramNameEl = document.getElementById('nextHaramName');
+    const sehriEl = document.getElementById('sehriTime');
+    const iftarEl = document.getElementById('iftarTime');
+    const timesListEl = document.getElementById('timesList');
+    const datePicker = document.getElementById('datePicker');
+    const saveIndicator = document.getElementById('saveIndicator');
+    
+    datePicker.valueAsDate = new Date();
+
+    // ---------- PWA service worker (minimal) ----------
+    if ('serviceWorker' in navigator) {
+      const swCode = `const CACHE='prayer-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+    }
+
+    // ---------- THEME / ACCENT ----------
+    window.toggleTheme = function() {
+      isDark = !isDark;
+      applyTheme();
+    };
+    window.toggleAccent = function() {
+      isOrange = !isOrange;
+      applyAccent();
+    };
+    
+    function applyTheme() {
+      const root = document.documentElement.style;
+      root.setProperty('--bg', isDark ? 'var(--bg-dark)' : 'var(--bg-light)');
+      root.setProperty('--surface', isDark ? 'var(--surface-dark)' : 'var(--surface-light)');
+      root.setProperty('--text', isDark ? 'var(--text-dark)' : 'var(--text-light)');
+      root.setProperty('--silver', isDark ? 'var(--silver-dark)' : 'var(--silver-light)');
+    }
+    function applyAccent() {
+      document.documentElement.style.setProperty('--accent', isOrange ? 'var(--accent-orange)' : 'var(--accent-emerald)');
+    }
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('accentToggle').addEventListener('click', toggleAccent);
+
+    // ---------- DATE CHANGE ----------
+    window.changeDate = function(val) {
+      if(!val) return;
+      const parts = val.split('-');
+      selectedDate = new Date(parts[0], parts[1]-1, parts[2]);
+      if(currentLat && currentLng) executeCalculations();
+    };
+    datePicker.addEventListener('change', (e) => changeDate(e.target.value));
+
+    // ---------- NETWORK TIME SYNC ----------
+    async function syncNetworkTime() {
+      try {
+        const res = await fetch('https://worldtimeapi.org/api/ip');
+        const data = await res.json();
+        const networkTime = new Date(data.datetime);
+        const localTime = new Date();
+        timeOffset = (networkTime - localTime) / 60000;
+        localStorage.setItem('timeOffsetData', JSON.stringify({ offset: timeOffset, ts: Date.now() }));
+        if(calculatedTimes.fajr) updateUI();
+      } catch {
+        const cached = localStorage.getItem('timeOffsetData');
+        if(cached) {
+          const d = JSON.parse(cached);
+          if(Date.now() - d.ts < 86400000) timeOffset = d.offset;
+        }
+      }
+    }
+    syncNetworkTime();
+
+    // ---------- LOCATION (auto + retry) ----------
+    function requestLocation() {
+      statusDiv.innerText = 'Requesting location...';
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          currentLat = pos.coords.latitude;
+          currentLng = pos.coords.longitude;
+          executeCalculations();
+          setInterval(() => { if(selectedDate.toDateString() === new Date().toDateString()) updateUI(); }, 60000);
+        },
+        err => {
+          statusDiv.innerText = 'Location denied. Tap "Refresh" to retry.';
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+      );
+    }
+    requestLocation();
+    
+    document.getElementById('retryLocationBtn').addEventListener('click', () => {
+      requestLocation();
+    });
+
+    // ---------- OFFSETS: load from storage, save on change ----------
+    const offsetInputs = {
+      fajr: document.getElementById('offsetFajr'),
+      dhuhr: document.getElementById('offsetDhuhr'),
+      asr: document.getElementById('offsetAsr'),
+      maghrib: document.getElementById('offsetMaghrib'),
+      isha: document.getElementById('offsetIsha')
+    };
+    
+    const STORAGE_KEY = 'prayerOffsets';
+    
+    function loadOffsetsFromStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.fajr !== undefined) prayerOffsets.fajr = parsed.fajr;
+          if (parsed.dhuhr !== undefined) prayerOffsets.dhuhr = parsed.dhuhr;
+          if (parsed.asr !== undefined) prayerOffsets.asr = parsed.asr;
+          if (parsed.maghrib !== undefined) prayerOffsets.maghrib = parsed.maghrib;
+          if (parsed.isha !== undefined) prayerOffsets.isha = parsed.isha;
+        } catch(e) { /* fallback to defaults */ }
+      }
+      // set input fields
+      offsetInputs.fajr.value = prayerOffsets.fajr;
+      offsetInputs.dhuhr.value = prayerOffsets.dhuhr;
+      offsetInputs.asr.value = prayerOffsets.asr;
+      offsetInputs.maghrib.value = prayerOffsets.maghrib;
+      offsetInputs.isha.value = prayerOffsets.isha;
+    }
+    
+    function saveOffsetsToStorage() {
+      const toSave = {
+        fajr: prayerOffsets.fajr,
+        dhuhr: prayerOffsets.dhuhr,
+        asr: prayerOffsets.asr,
+        maghrib: prayerOffsets.maghrib,
+        isha: prayerOffsets.isha
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      saveIndicator.style.opacity = '1';
+      saveIndicator.innerText = '💾 offsets saved';
+      setTimeout(() => { saveIndicator.innerText = '💾 offsets saved automatically'; }, 1200);
+    }
+    
+    function updateOffsetsFromInputs() {
+      prayerOffsets.fajr = parseInt(offsetInputs.fajr.value, 10) || 0;
+      prayerOffsets.dhuhr = parseInt(offsetInputs.dhuhr.value, 10) || 0;
+      prayerOffsets.asr = parseInt(offsetInputs.asr.value, 10) || 0;
+      prayerOffsets.maghrib = parseInt(offsetInputs.maghrib.value, 10) || 0;
+      prayerOffsets.isha = parseInt(offsetInputs.isha.value, 10) || 0;
+      saveOffsetsToStorage();
+      if(currentLat && currentLng) executeCalculations();
+    }
+    
+    for (let key in offsetInputs) {
+      offsetInputs[key].addEventListener('input', updateOffsetsFromInputs);
+    }
+    
+    // initial load from storage
+    loadOffsetsFromStorage();
+
+    // ---------- ASTRONOMY (unchanged, uses prayerOffsets) ----------
+    const DMath = {
+      dtr: d => (d * Math.PI) / 180, rtd: r => (r * 180) / Math.PI,
+      sin: d => Math.sin(DMath.dtr(d)), cos: d => Math.cos(DMath.dtr(d)), tan: d => Math.tan(DMath.dtr(d)),
+      arcsin: x => DMath.rtd(Math.asin(x)), arccos: x => DMath.rtd(Math.acos(x)),
+      arccot: x => DMath.rtd(Math.atan(1/x)),
+      fixAngle: a => { a -= 360 * Math.floor(a/360); return a < 0 ? a + 360 : a; },
+      fixHour: h => { h -= 24 * Math.floor(h/24); return h < 0 ? h + 24 : h; }
+    };
+
+    function getJulianDate(y, m, d) {
+      if (m <= 2) { y -= 1; m += 12; }
+      const a = Math.floor(y / 100);
+      const b = 2 - a + Math.floor(a / 4);
+      return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + b - 1524.5;
+    }
+
+    function computeTimes(date, lat, lng, tz) {
+      const jd = getJulianDate(date.getFullYear(), date.getMonth() + 1, date.getDate()) - lng / (15 * 24);
+      const g = DMath.fixAngle(357.529 + 0.98560028 * jd);
+      const q = DMath.fixAngle(280.459 + 0.98564736 * jd);
+      const l = DMath.fixAngle(q + 1.915 * DMath.sin(g) + 0.020 * DMath.sin(2 * g));
+      const e = 23.439 - 0.0000004 * jd;
+      const dec = DMath.arcsin(DMath.sin(e) * DMath.sin(l));
+      const ra = DMath.rtd(Math.atan2(DMath.cos(e) * DMath.sin(l), DMath.cos(l))) / 15;
+      const eqt = q/15 - DMath.fixHour(ra);
+      const noon = 12 + tz - lng/15 - eqt;
+      
+      const timeAtAngle = (angle) => {
+        const v = (DMath.sin(-angle) - DMath.sin(lat) * DMath.sin(dec)) / (DMath.cos(lat) * DMath.cos(dec));
+        if(v < -1 || v > 1) return null;
+        return DMath.arccos(v) / 15;
+      };
+      
+      const asrAngle = DMath.arccot(1 + DMath.tan(Math.abs(lat - dec)));
+      const maghribTime = timeAtAngle(0.833);
+      const sunriseTime = timeAtAngle(0.833);
+      let fajrTime = timeAtAngle(18);
+      let ishaTime = timeAtAngle(18);
+      
+      const maghrib = noon + maghribTime;
+      const sunrise = noon - sunriseTime;
+      
+      if (fajrTime === null || ishaTime === null) {
+        const night = 24 - (maghrib - sunrise);
+        fajrTime = sunrise - (night / 7);
+        ishaTime = maghrib + (night / 7);
+      } else {
+        fajrTime = noon - fajrTime;
+        ishaTime = noon + ishaTime;
+      }
+      
+      const asrRaw = (DMath.sin(asrAngle) - DMath.sin(lat) * DMath.sin(dec)) / (DMath.cos(lat) * DMath.cos(dec));
+      const asr = noon + (DMath.arccos(asrRaw > 1 ? 1 : asrRaw < -1 ? -1 : asrRaw) / 15);
+      
+      const fajrMin = hToM(fajrTime);
+      const maghribMin = hToM(maghrib);
+      const dhuhrMin = hToM(noon);
+      
+      return {
+        fajr: fajrMin + prayerOffsets.fajr,
+        sunrise: hToM(sunrise),
+        dhuhr: dhuhrMin + prayerOffsets.dhuhr,
+        asr: hToM(asr) + prayerOffsets.asr,
+        maghrib: maghribMin + prayerOffsets.maghrib,
+        isha: hToM(ishaTime) + prayerOffsets.isha,
+        sehri: fajrMin + prayerOffsets.fajr - 3,
+        iftar: maghribMin + prayerOffsets.maghrib + 3,
+        asrEnd: maghribMin + prayerOffsets.maghrib - 25,
+        zawalStart: dhuhrMin + prayerOffsets.dhuhr - 5,
+        zawalEnd: dhuhrMin + prayerOffsets.dhuhr + 5,
+        sunriseEnd: hToM(sunrise) + 15,
+        sunsetStart: maghribMin + prayerOffsets.maghrib - 15
+      };
+    }
+
+    function hToM(h) { return h ? Math.floor(h * 60) : 0; }
+    
+    function mToFormat(m) {
+      if (m === undefined || m === null) return "--:--";
+      let total = Math.floor(m % 1440);
+      if (total < 0) total += 1440;
+      let hr = Math.floor(total / 60);
+      let min = total % 60;
+      const ampm = hr >= 12 ? 'pm' : 'am';
+      hr = hr % 12;
+      if (hr === 0) hr = 12;
+      return `${hr}:${min < 10 ? '0' : ''}${min} ${ampm}`;
+    }
+
+    function formatDiff(m) {
+      if (m < 0) return "--:--";
+      const hrs = Math.floor(m / 60);
+      const mins = Math.floor(m % 60);
+      return `${hrs}h ${mins}m`;
+    }
+
+    function executeCalculations() {
+      if (!currentLat || !currentLng) return;
+      const tz = -selectedDate.getTimezoneOffset() / 60;
+      calculatedTimes = computeTimes(selectedDate, currentLat, currentLng, tz);
+      statusDiv.innerText = `📍 ${currentLat.toFixed(3)}, ${currentLng.toFixed(3)} · ${selectedDate.toLocaleDateString()}`;
+      updateUI();
+    }
+
+    function updateUI() {
+      if (!calculatedTimes.fajr) return;
+      
+      const now = new Date();
+      const isToday = selectedDate.toDateString() === now.toDateString();
+      const currentMins = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60 + timeOffset;
+      
+      const events = [
+        { name: 'Fajr', start: calculatedTimes.fajr, end: calculatedTimes.sunrise },
+        { name: 'Dhuhr', start: calculatedTimes.dhuhr, end: calculatedTimes.asr },
+        { name: 'Asr', start: calculatedTimes.asr, end: calculatedTimes.asrEnd },
+        { name: 'Maghrib', start: calculatedTimes.maghrib, end: calculatedTimes.isha },
+        { name: 'Isha', start: calculatedTimes.isha, end: calculatedTimes.fajr + 1440 }
+      ];
+      
+      sehriEl.innerText = mToFormat(calculatedTimes.sehri);
+      iftarEl.innerText = mToFormat(calculatedTimes.iftar);
+      
+      timesListEl.innerHTML = events.map(e => `
+        <div class="flex-between">
+          <span class="event-name">${e.name}</span>
+          <span class="event-time">${mToFormat(e.start)} – ${mToFormat(e.end)}</span>
+        </div>
+      `).join('');
+      
+      if (isToday) {
+        let nextSalah = events.find(e => e.start > currentMins) || { ...events[0], start: events[0].start + 1440 };
+        nextSalahEl.innerText = formatDiff(nextSalah.start - currentMins);
+        nextSalahNameEl.innerText = `${nextSalah.name} at ${mToFormat(nextSalah.start > 1440 ? nextSalah.start-1440 : nextSalah.start)}`;
+        
+        const haramTimes = [
+          { name: 'Sunrise buffer', start: calculatedTimes.sunrise, end: calculatedTimes.sunriseEnd },
+          { name: 'Zawal mid-day', start: calculatedTimes.zawalStart, end: calculatedTimes.zawalEnd },
+          { name: 'Sunset pale', start: calculatedTimes.sunsetStart, end: calculatedTimes.maghrib }
+        ];
+        let nextHaram = haramTimes.find(e => e.start > currentMins) || { ...haramTimes[0], start: haramTimes[0].start + 1440 };
+        nextHaramEl.innerText = formatDiff(nextHaram.start - currentMins);
+        nextHaramNameEl.innerText = `${nextHaram.name} at ${mToFormat(nextHaram.start > 1440 ? nextHaram.start-1440 : nextHaram.start)}`;
+      } else {
+        nextSalahEl.innerText = "--:--";
+        nextSalahNameEl.innerText = "📅 switch to today";
+        nextHaramEl.innerText = "--:--";
+        nextHaramNameEl.innerText = "📅 switch to today";
+      }
+    }
+
+    // force initial calculation if location ready
+    if (currentLat && currentLng) executeCalculations();
+  })();
+</script>
+</body>
+</html>
