@@ -33,6 +33,9 @@
             --silver-light: #606060;
             --accent-orange: #f57c00;
             --accent-emerald: #10b981;
+            --accent-purple: #9b59b6;
+            --accent-pink: #e91e8f;
+            --accent-aqua: #00bcd4;
             --bg: var(--bg-dark);
             --surface: var(--surface-dark);
             --text: var(--text-dark);
@@ -320,7 +323,7 @@
             // ---------- APPLICATION STATE ----------
             const state = {
                 isDarkTheme: true,
-                isOrangeAccent: true,
+                currentAccentIndex: 0,
                 userLatitude: null,
                 userLongitude: null,
                 selectedDate: new Date(),
@@ -337,6 +340,15 @@
                 isWaitingForLocationRestore: false
             };
 
+            const ACCENTS = [
+                { name: 'Orange', var: '--accent-orange' },
+                { name: 'Emerald', var: '--accent-emerald' },
+                { name: 'Purple', var: '--accent-purple' },
+                { name: 'Pink', var: '--accent-pink' },
+                { name: 'Aqua', var: '--accent-aqua' }
+            ];
+            const ACCENT_STORAGE_KEY = 'selectedAccent';
+
             // ---------- THEME & ACCENT HELPERS ----------
             function applyCurrentTheme() {
                 const root = document.documentElement.style;
@@ -347,17 +359,28 @@
             }
 
             function applyCurrentAccent() {
-                document.documentElement.style.setProperty('--accent',
-                    state.isOrangeAccent ? 'var(--accent-orange)' : 'var(--accent-emerald)');
-            }
-
-            function toggleTheme() {
-                state.isDarkTheme = !state.isDarkTheme;
-                applyCurrentTheme();
+                const accentVar = ACCENTS[state.currentAccentIndex].var;
+                document.documentElement.style.setProperty('--accent', `var(${accentVar})`);
             }
 
             function toggleAccent() {
-                state.isOrangeAccent = !state.isOrangeAccent;
+                state.currentAccentIndex = (state.currentAccentIndex + 1) % ACCENTS.length;
+                applyCurrentAccent();
+                saveAccentToStorage();
+            }
+
+            function saveAccentToStorage() {
+                localStorage.setItem(ACCENT_STORAGE_KEY, state.currentAccentIndex);
+            }
+
+            function loadAccentFromStorage() {
+                const saved = localStorage.getItem(ACCENT_STORAGE_KEY);
+                if (saved !== null) {
+                    const index = parseInt(saved, 10);
+                    if (!isNaN(index) && index >= 0 && index < ACCENTS.length) {
+                        state.currentAccentIndex = index;
+                    }
+                }
                 applyCurrentAccent();
             }
 
@@ -440,7 +463,7 @@
 
             function handleLocationError(error) {
                 const errorMessages = {
-                    1: '❌ Location permission denied, allow in site settings. refresh to retry.',
+                    1: '❌ Location permission denied, allow in site settings. Refresh if aleady allowed.',
                     2: '📍 Location unavailable. Move to an open area or refresh.',
                     3: '⏳ Location request timed out. Tap refresh to retry.'
                 };
@@ -728,6 +751,7 @@
             // ---------- EVENT LISTENERS & INIT ----------
             function initializeApp() {
                 DOM.themeToggle.addEventListener('click', toggleTheme);
+                loadAccentFromStorage();
                 DOM.accentToggle.addEventListener('click', toggleAccent);
                 applyCurrentTheme();
                 applyCurrentAccent();
