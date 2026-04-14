@@ -467,7 +467,6 @@
 
                 state.locationWatchId = navigator.geolocation.watchPosition(
                     (pos) => {
-                        // Location restored successfully
                         navigator.geolocation.clearWatch(state.locationWatchId);
                         state.locationWatchId = null;
                         state.isWaitingForLocationRestore = false;
@@ -488,7 +487,7 @@
                         recalculateAndUpdateUI();
                     },
                     (err) => {
-                        // Keep watching silently
+                        // Keep watching silently; errors are ignored while restoring
                     },
                     { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
                 );
@@ -516,7 +515,7 @@
                 state.userLongitude = pos.coords.longitude;
                 recalculateAndUpdateUI();
 
-                // Set up periodic refresh for today
+                // Periodic refresh for "today" view
                 setInterval(() => {
                     if (state.selectedDate.toDateString() === new Date().toDateString()) {
                         refreshUIDisplay();
@@ -525,17 +524,18 @@
             }
 
             async function requestGeolocation() {
+                // If already waiting for restore, do nothing (watch is active)
                 if (state.isWaitingForLocationRestore) {
-                    return; // Already watching for restore
+                    return;
                 }
 
+                // Show hint based on permission state, but DO NOT BLOCK the request
                 const permState = await checkLocationPermissionState();
-
                 if (permState === 'prompt') {
                     DOM.statusDisplay.innerText = '🔔 Please allow location access when prompted.';
                 } else if (permState === 'denied') {
-                    DOM.statusDisplay.innerText = '🚫 Location blocked. Enable it in browser/site settings.';
-                    return;
+                    DOM.statusDisplay.innerText = '🚫 Location blocked in browser settings. Tap "Refresh" to retry anyway.';
+                    // Continue to call getCurrentPosition – the error handler will show the proper message
                 } else {
                     DOM.statusDisplay.innerText = '⏳ Detecting location…';
                 }
@@ -546,6 +546,7 @@
                     maximumAge: 60000
                 };
 
+                // Always attempt to get the position – the error callback handles real denial/unavailability
                 navigator.geolocation.getCurrentPosition(
                     locationSuccessCallback,
                     handleLocationError,
