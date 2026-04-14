@@ -350,12 +350,26 @@
             const ACCENT_STORAGE_KEY = 'selectedAccent';
 
             // ---------- THEME & ACCENT HELPERS ----------
+            function toggleTheme() {
+                state.isDarkTheme = !state.isDarkTheme;
+                applyCurrentTheme();
+                localStorage.setItem('darkTheme', state.isDarkTheme);
+            }
+
             function applyCurrentTheme() {
                 const root = document.documentElement.style;
                 root.setProperty('--bg', state.isDarkTheme ? 'var(--bg-dark)' : 'var(--bg-light)');
                 root.setProperty('--surface', state.isDarkTheme ? 'var(--surface-dark)' : 'var(--surface-light)');
                 root.setProperty('--text', state.isDarkTheme ? 'var(--text-dark)' : 'var(--text-light)');
                 root.setProperty('--silver', state.isDarkTheme ? 'var(--silver-dark)' : 'var(--silver-light)');
+            }
+
+            function loadThemeFromStorage() {
+                const saved = localStorage.getItem('darkTheme');
+                if (saved !== null) {
+                    state.isDarkTheme = saved === 'true';
+                }
+                applyCurrentTheme();
             }
 
             function applyCurrentAccent() {
@@ -450,7 +464,7 @@
                 }
             }
 
-            // ---------- ENHANCED LOCATION HANDLING ----------
+            // ---------- LOCATION HANDLING ----------
             async function checkLocationPermissionState() {
                 if (!navigator.permissions) return 'unknown';
                 try {
@@ -463,16 +477,15 @@
 
             function handleLocationError(error) {
                 const errorMessages = {
-                    1: '❌ Location permission denied, allow in site settings. Refresh if aleady allowed.',
-                    2: '📍 Location unavailable. Move to an open area or refresh.',
-                    3: '⏳ Location request timed out. Tap refresh to retry.'
+                    1: '❌ Location permission denied. Allow in site settings, then tap Refresh.',
+                    2: '📍 Location unavailable. Move to an open area or tap Refresh.',
+                    3: '⏳ Location request timed out. Tap Refresh to retry.'
                 };
 
                 if (error.code === error.PERMISSION_DENIED) {
                     DOM.statusDisplay.innerText = errorMessages[1];
                 } else if (error.code === error.POSITION_UNAVAILABLE) {
-                    DOM.statusDisplay.innerText = '📡 System location appears off. Turn on GPS/location services.';
-                    watchForLocationRestore();
+                    DOM.statusDisplay.innerText = '📡 System location appears off. Turn on GPS/location services, then tap Refresh.';
                 } else if (error.code === error.TIMEOUT) {
                     DOM.statusDisplay.innerText = errorMessages[3];
                 } else {
@@ -480,43 +493,8 @@
                 }
             }
 
-            function watchForLocationRestore() {
-                if (state.locationWatchId) {
-                    navigator.geolocation.clearWatch(state.locationWatchId);
-                }
-
-                state.isWaitingForLocationRestore = true;
-                DOM.statusDisplay.innerText = '🔄 Waiting for location services… (auto‑refreshing)';
-
-                state.locationWatchId = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        navigator.geolocation.clearWatch(state.locationWatchId);
-                        state.locationWatchId = null;
-                        state.isWaitingForLocationRestore = false;
-
-                        const accuracy = pos.coords.accuracy;
-                        const age = Date.now() - pos.timestamp;
-
-                        if (accuracy > 500) {
-                            DOM.statusDisplay.innerText = `📍 Low accuracy (${Math.round(accuracy)}m). Move outdoors.`;
-                        } else if (age > 60000) {
-                            DOM.statusDisplay.innerText = `💾 Using cached location (${Math.round(age / 1000)}s old).`;
-                        } else {
-                            DOM.statusDisplay.innerText = `✅ Location restored · ${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`;
-                        }
-
-                        state.userLatitude = pos.coords.latitude;
-                        state.userLongitude = pos.coords.longitude;
-                        recalculateAndUpdateUI();
-                    },
-                    (err) => {
-                        // Keep watching silently; errors are ignored while restoring
-                    },
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
-                );
-            }
-
             function locationSuccessCallback(pos) {
+                // Clear any active watch
                 if (state.locationWatchId) {
                     navigator.geolocation.clearWatch(state.locationWatchId);
                     state.locationWatchId = null;
@@ -531,7 +509,7 @@
                 } else if (age > 60000) {
                     DOM.statusDisplay.innerText = `💾 Using cached location (${Math.round(age / 1000)}s old).`;
                 } else {
-                    DOM.statusDisplay.innerText = `📍 ${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`;
+                    DOM.statusDisplay.innerText = `✅ ${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`;
                 }
 
                 state.userLatitude = pos.coords.latitude;
@@ -546,30 +524,24 @@
                 }, 60000);
             }
 
-            async function requestGeolocation() {
-                // If already waiting for restore, do nothing (watch is active)
-                if (state.isWaitingForLocationRestore) {
-                    return;
+            function requestGeolocation() {
+                // Clear any existing watch
+                if (state.locationWatchId) {
+                    navigator.geolocation.clearWatch(state.locationWatchId);
+                    state.locationWatchId = null;
                 }
+                state.isWaitingForLocationRestore = false;
 
-                // Show hint based on permission state, but DO NOT BLOCK the request
-                const permState = await checkLocationPermissionState();
-                if (permState === 'prompt') {
-                    DOM.statusDisplay.innerText = '🔔 Please allow location access when prompted.';
-                } else if (permState === 'denied') {
-                    DOM.statusDisplay.innerText = '🚫 Location blocked in browser settings. Tap "Refresh" to retry anyway.';
-                    // Continue to call getCurrentPosition – the error handler will show the proper message
-                } else {
-                    DOM.statusDisplay.innerText = '⏳ Detecting location…';
-                }
+                // Simple status message
+                DOM.statusDisplay.innerText = '⏳ Detecting location…';
 
                 const options = {
                     enableHighAccuracy: true,
                     timeout: 8000,
-                    maximumAge: 60000
+                    maximumAge: 60000  // Accept 1-minute cached position
                 };
 
-                // Always attempt to get the position – the error callback handles real denial/unavailability
+                // Direct request - browser handles permission prompts automatically
                 navigator.geolocation.getCurrentPosition(
                     locationSuccessCallback,
                     handleLocationError,
@@ -750,12 +722,17 @@
 
             // ---------- EVENT LISTENERS & INIT ----------
             function initializeApp() {
-                DOM.themeToggle.addEventListener('click', toggleTheme);
+                // Load and apply theme first
+                loadThemeFromStorage();
                 loadAccentFromStorage();
-                DOM.accentToggle.addEventListener('click', toggleAccent);
-                applyCurrentTheme();
-                applyCurrentAccent();
 
+                // Setup theme toggle
+                DOM.themeToggle.addEventListener('click', toggleTheme);
+
+                // Setup accent toggle
+                DOM.accentToggle.addEventListener('click', toggleAccent);
+
+                // Setup date picker
                 DOM.datePicker.valueAsDate = new Date();
                 DOM.datePicker.addEventListener('change', (e) => {
                     const [year, month, day] = e.target.value.split('-');
@@ -763,21 +740,22 @@
                     if (state.userLatitude && state.userLongitude) recalculateAndUpdateUI();
                 });
 
+                // Load offsets and setup listeners
                 loadOffsetsFromStorage();
-                Object.values(DOM.offsetInputs).forEach(input => input.addEventListener('input', handleOffsetInputChange));
+                Object.values(DOM.offsetInputs).forEach(input =>
+                    input.addEventListener('input', handleOffsetInputChange)
+                );
 
-                DOM.retryLocationBtn.addEventListener('click', () => {
-                    if (state.locationWatchId) {
-                        navigator.geolocation.clearWatch(state.locationWatchId);
-                        state.locationWatchId = null;
-                    }
-                    state.isWaitingForLocationRestore = false;
-                    requestGeolocation();
-                });
+                // Refresh location button
+                DOM.retryLocationBtn.addEventListener('click', requestGeolocation);
 
+                // Initial location request
                 requestGeolocation();
+
+                // Sync network time
                 synchronizeNetworkTime();
 
+                // Register service worker
                 if ('serviceWorker' in navigator) {
                     const swBlob = new Blob([`const CACHE='prayer-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`], { type: 'application/javascript' });
                     navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => { });
