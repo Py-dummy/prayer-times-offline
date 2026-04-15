@@ -737,9 +737,8 @@
 
                 return {
                     computePrayerTimes(date, latitude, longitude, timezone, offsets, asrMethod) {
-                        // Configure PrayTime
                         prayTime.location([latitude, longitude]);
-                        prayTime.adjust({ asr: asrMethod }); // 'Standard' or 'Hanafi'
+                        prayTime.adjust({ asr: asrMethod });
                         prayTime.tune({
                             fajr: offsets.fajr,
                             dhuhr: offsets.dhuhr,
@@ -748,22 +747,29 @@
                             isha: offsets.isha
                         });
 
-                        // Get times as timestamps
-                        prayTime.format('X'); // Unix timestamp in seconds
+                        // Use 24h string format — keys are lowercase, values are "HH:MM"
+                        prayTime.set({ format: '12h' });
                         const times = prayTime.times(date);
 
-                        // Convert to minutes since midnight (for compatibility with existing code)
-                        const toMinutes = (timestamp) => {
-                            const d = new Date(timestamp * 1000);
-                            return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
-                        };
+                        // Convert "HH:MM" string → minutes since midnight
+                        const toMin = (str) => {
+    if (!str || str.includes('-')) return NaN;
+    // Handle "8:30 AM" / "12:45 PM"
+    const isPM = /PM/i.test(str);
+    const isAM = /AM/i.test(str);
+    const [h, m] = str.replace(/[APM\s]/gi, '').split(':').map(Number);
+    let hours = h;
+    if (isPM && h !== 12) hours += 12;
+    if (isAM && h === 12) hours = 0;
+    return hours * 60 + m;
+};
 
-                        const fajrMin = toMinutes(times.Fajr);
-                        const sunriseMin = toMinutes(times.Sunrise);
-                        const dhuhrMin = toMinutes(times.Dhuhr);
-                        const asrMin = toMinutes(times.Asr);
-                        const maghribMin = toMinutes(times.Maghrib);
-                        const ishaMin = toMinutes(times.Isha);
+                        const fajrMin = toMin(times.fajr);
+                        const sunriseMin = toMin(times.sunrise);
+                        const dhuhrMin = toMin(times.dhuhr);
+                        const asrMin = toMin(times.asr);
+                        const maghribMin = toMin(times.maghrib);
+                        const ishaMin = toMin(times.isha);
 
                         return {
                             fajr: fajrMin,
@@ -772,8 +778,8 @@
                             asr: asrMin,
                             maghrib: maghribMin,
                             isha: ishaMin,
-                            sehriEnd: fajrMin, // Sehri ends at Fajr
-                            iftarStart: maghribMin + 1, // Iftar 1 min after Maghrib
+                            sehriEnd: fajrMin,
+                            iftarStart: maghribMin + 1,
                             asrEnd: maghribMin - 25,
                             zawalStart: dhuhrMin - 5,
                             zawalEnd: dhuhrMin + 5,
