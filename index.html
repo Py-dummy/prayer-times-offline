@@ -410,13 +410,41 @@
 
             // ── NETWORK TIME ─────────────────────────────────────────────
             async function syncNetworkTime() {
+                // navigator.onLine is the browser's real-time connectivity flag.
+                // If it's false, we know for certain we're offline — skip the fetch entirely.
+                if (!navigator.onLine) {
+                    const c = lsGetNet();
+                    lsSetNet({
+                        time: c ? c.time + (Date.now() - c.ts) : Date.now(),
+                        ts: Date.now(),
+                        online: false
+                    });
+                    if (S.times) refreshUI();
+                    return;
+                }
+
                 try {
-                    const res = await fetch('https://worldtimeapi.org/api/ip', { signal: AbortSignal.timeout(5000) });
+                    // cache:'no-store' prevents the Service Worker cache from returning
+                    // a stale/503 response. Without this, the SW intercepts the request
+                    // and may serve a cached failure, making the fetch "succeed" with bad data.
+                    const res = await fetch('https://worldtimeapi.org/api/ip', {
+                        cache: 'no-store',
+                        signal: AbortSignal.timeout(7000)
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const { datetime } = await res.json();
                     lsSetNet({ time: new Date(datetime).getTime(), ts: Date.now(), online: true });
                 } catch {
+                    // Fetch failed despite navigator.onLine being true.
+                    // This can happen if worldtimeapi.org is down, or DNS failed, etc.
+                    // We still mark online:true because the DEVICE has internet —
+                    // it's just this one API that failed. We advance the saved time forward.
                     const c = lsGetNet();
-                    lsSetNet({ time: c ? c.time + (Date.now() - c.ts) : Date.now(), ts: Date.now(), online: false });
+                    lsSetNet({
+                        time: c ? c.time + (Date.now() - c.ts) : Date.now(),
+                        ts: Date.now(),
+                        online: navigator.onLine   // reflect actual device state, not API failure
+                    });
                 }
                 if (S.times) refreshUI();
             }
@@ -428,8 +456,14 @@
                 const c = lsGetNet();
                 return c ? new Date(c.time + (Date.now() - c.ts)) : new Date();
             }
+
             function isOffline() {
-                const c = lsGetNet(); return !c || c.online === false;
+                // Primary source of truth: browser's live connectivity flag.
+                // Only fall back to the stored flag if navigator.onLine is somehow
+                // unavailable (very old browsers), which is extremely rare.
+                if (typeof navigator.onLine === 'boolean') return !navigator.onLine;
+                const c = lsGetNet();
+                return !c || c.online === false;
             }
 
             // ── LOCATION ─────────────────────────────────────────────────
