@@ -477,7 +477,7 @@
                         ? `💾 Using cached location (${Math.round(age / 1000)}s old).`
                         : `✅ ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
                 recalc();
-                setInterval(() => { if (S.date.toDateString() === new Date().toDateString()) refreshUI(); }, 60000);
+                setInterval(() => { if (S.date.toDateString() === now().toDateString()) refreshUI(); }, 60000);
             }
             function onLocationError(e) {
                 D.status.innerText =
@@ -544,11 +544,10 @@
 
             // ── UI REFRESH ───────────────────────────────────────────────
             function refreshUI() {
-                const t = S.times; if (!t) return;
-                const n = now();
-                const nStr = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-                const isToday = $('datePicker').value === nStr;
-                const cur = n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
+                const networkNow = now();
+                const networkDateStr = networkNow.toDateString();
+                const cur = networkNow.getHours() * 60 + networkNow.getMinutes() + networkNow.getSeconds() / 60;
+                const isToday = S.date.toDateString() === networkDateStr;
 
                 D.sehri.innerText = fmt(t.sehriEnd);
                 D.iftar.innerText = fmt(t.iftarStart);
