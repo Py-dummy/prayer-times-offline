@@ -548,6 +548,7 @@
                 const networkDateStr = networkNow.toDateString();
                 const cur = networkNow.getHours() * 60 + networkNow.getMinutes() + networkNow.getSeconds() / 60;
                 const isToday = S.date.toDateString() === networkDateStr;
+                const t = S.times;
 
                 D.sehri.innerText = fmt(t.sehriEnd);
                 D.iftar.innerText = fmt(t.iftarStart);
