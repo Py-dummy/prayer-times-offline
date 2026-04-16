@@ -385,7 +385,7 @@
                 userLongitude: null,
                 selectedDate: new Date(),
                 calculatedPrayerTimes: null,
-                networkTimeOffsetMinutes: 0,
+                networkTime: null, // Direct network time
                 asrMethod: 'Standard',
                 prayerOffsets: {
                     fajr: 0,
@@ -408,6 +408,8 @@
             const ACCENT_STORAGE_KEY = 'selectedAccent';
 
             const LOCATION_CACHE_KEY = 'lastKnownLocation';
+
+            const NETWORK_TIME_KEY = 'savedNetworkTime';
 
             // ---------- THEME & ACCENT HELPERS ----------
             function toggleTheme() {
@@ -549,56 +551,40 @@
 
             // ---------- NETWORK TIME SYNC ----------
             async function synchronizeNetworkTime() {
-                const CACHE_KEY = 'timeOffsetCache';
-                const CACHE_DURATION = 86400000; // 24 hours in milliseconds
-
                 try {
                     const response = await fetch('https://worldtimeapi.org/api/ip', {
-                        signal: AbortSignal.timeout(5000) // 5 sec timeout
+                        signal: AbortSignal.timeout(5000)
                     });
                     const data = await response.json();
-                    const networkDate = new Date(data.datetime);
-                    const localDate = new Date();
+                    state.networkTime = new Date(data.datetime);
 
-                    // Calculate offset between network time and phone time
-                    state.networkTimeOffsetMinutes = (networkDate - localDate) / 60000;
-
-                    // Cache it with timestamp
-                    localStorage.setItem(CACHE_KEY, JSON.stringify({
-                        offset: state.networkTimeOffsetMinutes,
+                    localStorage.setItem(NETWORK_TIME_KEY, JSON.stringify({
+                        time: state.networkTime.getTime(),
                         timestamp: Date.now()
                     }));
 
-                    console.log(`✅ Network time synced. Offset: ${state.networkTimeOffsetMinutes.toFixed(2)} min`);
+                    console.log(`✅ Network time synced: ${state.networkTime.toLocaleString()}`);
 
                     if (state.calculatedPrayerTimes) refreshUIDisplay();
                 } catch (error) {
-                    // Offline or timeout - use cached offset
-                    const cached = localStorage.getItem(CACHE_KEY);
+                    // Load from cache
+                    const cached = localStorage.getItem(NETWORK_TIME_KEY);
                     if (cached) {
-                        try {
-                            const parsed = JSON.parse(cached);
-                            const age = Date.now() - parsed.timestamp;
-
-                            if (age < CACHE_DURATION) {
-                                state.networkTimeOffsetMinutes = parsed.offset;
-                                console.log(`📦 Using cached time offset (${Math.round(age / 3600000)}h old)`);
-                            } else {
-                                // Cache expired - use phone time as-is
-                                state.networkTimeOffsetMinutes = 0;
-                                console.log(`⏰ Cache expired. Using phone time.`);
-                            }
-                        } catch (e) {
-                            state.networkTimeOffsetMinutes = 0;
-                        }
+                        const { time, timestamp } = JSON.parse(cached);
+                        const age = Date.now() - timestamp;
+                        state.networkTime = new Date(time + age); // Adjust for elapsed time
+                        console.log(`📦 Using cached network time (${Math.round(age / 3600000)}h old)`);
                     } else {
-                        // No cache - first time offline
-                        state.networkTimeOffsetMinutes = 0;
-                        console.log(`📵 Offline, no cache. Using phone time.`);
+                        state.networkTime = new Date(); // Fallback to device time
+                        console.log(`📵 Offline, using device time`);
                     }
 
                     if (state.calculatedPrayerTimes) refreshUIDisplay();
                 }
+            }
+
+            function getCurrentTime() {
+                return state.networkTime || new Date();
             }
 
             // ---------- LOCATION HANDLING ----------
@@ -736,7 +722,7 @@
                 const prayTime = new PrayTime('Karachi');
 
                 return {
-                    computePrayerTimes(date, latitude, longitude, timezone, offsets, asrMethod) {
+                    computePrayerTimes(date, latitude, longitude, offsets, asrMethod) {
                         prayTime.location([latitude, longitude]);
                         prayTime.adjust({ asr: asrMethod });
                         prayTime.tune({
@@ -747,22 +733,19 @@
                             isha: offsets.isha
                         });
 
-                        // Use 24h string format — keys are lowercase, values are "HH:MM"
-                        prayTime.set({ format: '12h' });
+                        // Force consistent timezone handling - use local timezone
+                        prayTime.set({
+                            format: '24h',
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        });
+
                         const times = prayTime.times(date);
 
-                        // Convert "HH:MM" string → minutes since midnight
                         const toMin = (str) => {
-    if (!str || str.includes('-')) return NaN;
-    // Handle "8:30 AM" / "12:45 PM"
-    const isPM = /PM/i.test(str);
-    const isAM = /AM/i.test(str);
-    const [h, m] = str.replace(/[APM\s]/gi, '').split(':').map(Number);
-    let hours = h;
-    if (isPM && h !== 12) hours += 12;
-    if (isAM && h === 12) hours = 0;
-    return hours * 60 + m;
-};
+                            if (!str || str.includes('-')) return NaN;
+                            const [h, m] = str.split(':').map(Number);
+                            return h * 60 + m;
+                        };
 
                         const fajrMin = toMin(times.fajr);
                         const sunriseMin = toMin(times.sunrise);
@@ -790,7 +773,7 @@
                     },
 
                     formatTimeFromMinutes: (totalMinutes) => {
-                        if (totalMinutes === undefined || totalMinutes === null) return '--:--';
+                        if (totalMinutes === undefined || totalMinutes === null || isNaN(totalMinutes)) return '--:--';
                         let mins = Math.floor(((totalMinutes % 1440) + 1440) % 1440);
                         const hours = Math.floor(mins / 60);
                         const minutes = mins % 60;
@@ -801,7 +784,7 @@
                     },
 
                     formatDuration: (minutesDiff) => {
-                        if (minutesDiff < 0) return '--:--';
+                        if (minutesDiff < 0 || isNaN(minutesDiff)) return '--:--';
                         const hrs = Math.floor(minutesDiff / 60);
                         const mins = Math.floor(minutesDiff % 60);
                         return `${hrs}h ${mins}m`;
@@ -812,12 +795,11 @@
             // ---------- CALCULATION & UI UPDATE ----------
             function recalculateAndUpdateUI() {
                 if (!state.userLatitude || !state.userLongitude) return;
-                const timezoneOffset = -state.selectedDate.getTimezoneOffset() / 60;
+
                 state.calculatedPrayerTimes = Astro.computePrayerTimes(
                     state.selectedDate,
                     state.userLatitude,
                     state.userLongitude,
-                    timezoneOffset,
                     state.prayerOffsets,
                     state.asrMethod
                 );
@@ -828,9 +810,13 @@
                 const times = state.calculatedPrayerTimes;
                 if (!times) return;
 
-                const now = new Date();
+                const now = getCurrentTime();
                 const isToday = state.selectedDate.toDateString() === now.toDateString();
-                const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60 + state.networkTimeOffsetMinutes;
+                const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+
+                // Show time source info
+                const isCached = localStorage.getItem(NETWORK_TIME_KEY) && !navigator.onLine;
+                const timeInfo = isCached ? ' 📵 Using saved network time' : '';
 
                 DOM.sehriEndDisplay.innerText = Astro.formatTimeFromMinutes(times.sehriEnd);
                 DOM.iftarStartDisplay.innerText = Astro.formatTimeFromMinutes(times.iftarStart);
@@ -848,7 +834,7 @@
           <span class="event-name">${p.name}</span>
           <span class="event-time">${Astro.formatTimeFromMinutes(p.start)} – ${Astro.formatTimeFromMinutes(p.end)}</span>
         </div>
-      `).join('');
+    `).join('') + (timeInfo ? `<div style="font-size: 0.75rem; opacity: 0.7; margin-top: 8px;">${timeInfo}</div>` : '');
 
                 if (!isToday) {
                     DOM.nextSalahCountdown.innerText = '--:--';
@@ -876,29 +862,6 @@
                 const haramStart = upcomingHaram.start > 1440 ? upcomingHaram.start - 1440 : upcomingHaram.start;
                 DOM.nextHaramDescription.innerText = `${upcomingHaram.name} at ${Astro.formatTimeFromMinutes(haramStart)}`;
             }
-
-            function updateOnlineStatus() {
-                const isOnline = navigator.onLine;
-                const statusCard = document.querySelector('#statusDisplay');
-
-                if (!isOnline && statusCard) {
-                    const offlineNotice = statusCard.innerText.includes('📵') ? '' : ' 📵 Offline mode';
-                    if (!statusCard.innerText.includes('📵')) {
-                        statusCard.innerText += offlineNotice;
-                    }
-                }
-            }
-
-            // Listen for online/offline events
-            window.addEventListener('online', () => {
-                console.log('🟢 Back online');
-                synchronizeNetworkTime(); // Re-sync when connection restored
-            });
-
-            window.addEventListener('offline', () => {
-                console.log('🔴 Gone offline');
-                updateOnlineStatus();
-            });
 
             // ---------- EVENT LISTENERS & INIT ----------
             function initializeApp() {
@@ -939,7 +902,6 @@
                 requestGeolocation();
                 quickStartWithCache();
                 synchronizeNetworkTime();
-                updateOnlineStatus();
 
                 // Register service worker
                 if ('serviceWorker' in navigator) {
