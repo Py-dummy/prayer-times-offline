@@ -545,7 +545,9 @@
             // ── UI REFRESH ───────────────────────────────────────────────
             function refreshUI() {
                 const t = S.times; if (!t) return;
-                const n = now(), isToday = S.date.toDateString() === n.toDateString();
+                const n = now();
+                const nStr = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+                const isToday = $('datePicker').value === nStr;
                 const cur = n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
 
                 D.sehri.innerText = fmt(t.sehriEnd);
