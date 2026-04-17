@@ -299,13 +299,13 @@
     </div>
 
     <div class="card">
-        <h2>Next salah</h2>
+        <h2>Next salah (uses phone time)</h2>
         <div class="countdown pulse" id="nextSalahCountdown">--:--</div>
         <div id="nextSalahDescription" class="subtitle">calculating</div>
     </div>
 
     <div class="card">
-        <h2>Next haram time</h2>
+        <h2>Next haram time (uses phone time)</h2>
         <div class="countdown" id="nextHaramCountdown">--:--</div>
         <div id="nextHaramDescription" class="subtitle">calculating</div>
     </div>
@@ -594,20 +594,9 @@
 
             // ── SERVICE WORKER ───────────────────────────────────────────
             if ('serviceWorker' in navigator) {
-                const sw = `
-            const C = 'prayer-v1.0.4';
-            self.addEventListener('install',  e => { e.waitUntil(caches.open(C).then(c => c.addAll(['/']))); self.skipWaiting(); });
-            self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k!==C).map(k => caches.delete(k))))); self.clients.claim(); });
-            self.addEventListener('fetch', e => e.respondWith(
-            caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-                if (e.request.url.startsWith('http')) caches.open(C).then(c => c.put(e.request, res.clone()));
-                return res;
-            }).catch(() => new Response('Offline', { status: 503 })))
-            ));`;
-                navigator.serviceWorker
-                    .register(URL.createObjectURL(new Blob([sw], { type: 'application/javascript' })))
-                    .then(r => console.log('✅ SW:', r.scope))
-                    .catch(e => console.log('❌ SW:', e));
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ SW registered:', reg.scope))
+                    .catch(err => console.log('❌ SW registration failed:', err));
             }
 
             // ── INIT ─────────────────────────────────────────────────────
